@@ -18,6 +18,7 @@ function normalizePool(pool: GeckoTerminalPool, chainId: string): TrendingToken 
       ? toNumber(attributes.price_change_percentage.h24)
       : null,
     volume24hUsd: toNumber(attributes.volume_usd.h24),
+    liquidityUsd: attributes.reserve_in_usd ? toNumber(attributes.reserve_in_usd) : null,
     poolUrl: `https://www.geckoterminal.com/${chainId}/pools/${attributes.address}`,
     source: {
       provider: "geckoterminal",

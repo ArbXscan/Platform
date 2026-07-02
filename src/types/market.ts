@@ -11,6 +11,8 @@ export interface TrendingToken {
   priceUsd: number
   change24h: number | null
   volume24hUsd: number
+  /** From GeckoTerminal's reserve_in_usd. null when the pool doesn't report it. */
+  liquidityUsd: number | null
   poolUrl: string
   source: DataSourceMeta
 }
