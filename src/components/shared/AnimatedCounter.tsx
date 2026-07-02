@@ -24,7 +24,7 @@ export function AnimatedCounter({
     <motion.span
       className={className}
       onViewportEnter={() => setEnabled(true)}
-      viewport= once: true​NOTION_TWS[ ]NOTION_TWS​
+      viewport={{ once: true }}
     >
       {prefix}
       {count.toLocaleString(undefined, {

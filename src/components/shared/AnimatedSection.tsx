@@ -32,9 +32,13 @@ export function AnimatedSection({
       className={className}
       initial="hidden"
       whileInView="show"
-      viewport= once: true, amount: 0.2​NOTION_TWS[ ]NOTION_TWS​
-      transition= duration: 0.6, delay, ease: [0.21, 0.47, 0.32, 0.98]​NOTION_TWS[ ]NOTION_TWS​
-      variants={variants[animation]}
+      viewport={{ once: true, amount: 0.2 }}
+transition={{
+  duration: 0.6,
+  delay,
+  ease: [0.21, 0.47, 0.32, 0.98],
+}}
+variants={variants[animation]}
     >
       {children}
     </motion.div>
