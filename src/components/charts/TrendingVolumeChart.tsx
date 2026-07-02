@@ -15,10 +15,7 @@ export function TrendingVolumeChart({ data }: TrendingVolumeChartProps) {
 
   return (
     <ResponsiveContainer width="100%" height={240}>
-      <BarChart
-        data={chartData}
-        margin={{ top: 8, right: 8, left: 8, bottom: 8 }}
-      >
+      <BarChart data={chartData} margin={{ top: 8, right: 8, left: 8, bottom: 8 }}>
         <XAxis
           dataKey="name"
           stroke="#64748b"
@@ -28,31 +25,17 @@ export function TrendingVolumeChart({ data }: TrendingVolumeChartProps) {
           textAnchor="end"
           height={50}
         />
-
         <YAxis
           stroke="#64748b"
           fontSize={11}
-          tickFormatter={(value) =>
-            `$${Intl.NumberFormat("en", {
-              notation: "compact",
-            }).format(Number(value))}`
-          }
+          tickFormatter={(v: number) => `$${Intl.NumberFormat("en", { notation: "compact" }).format(v)}`}
         />
-
         <Tooltip
-          contentStyle={{
-            background: "#0f172a",
-            border: "1px solid rgba(255,255,255,0.1)",
-            borderRadius: 8,
-          }}
+          contentStyle={{ background: "#0f172a", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8 }}
           labelStyle={{ color: "#e2e8f0" }}
+          formatter={(value: number) => [`$${value.toLocaleString()}`, "24h Volume"]}
         />
-
-        <Bar
-          dataKey="volume"
-          fill="#22d3ee"
-          radius={[4, 4, 0, 0]}
-        />
+        <Bar dataKey="volume" fill="#22d3ee" radius={[4, 4, 0, 0]} />
       </BarChart>
     </ResponsiveContainer>
   )

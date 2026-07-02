@@ -17,9 +17,11 @@ export interface ArbitrageOpportunity {
   buyFrom: ExchangeQuote
   sellTo: ExchangeQuote
   priceDiffPercent: number
-  estimatedGasUsd: number
+  /** undefined = not available yet; needs a gas-oracle/RPC provider not wired up in Step 3. */
+  estimatedGasUsd?: number
   estimatedBridgeUsd?: number
-  estimatedNetProfitUsd: number
+  /** undefined = not available yet; depends on estimatedGasUsd. */
+  estimatedNetProfitUsd?: number
   /** Set by features/arbitrage/confidence-engine.ts, not by the raw provider data. */
   confidence: ConfidenceLevel
   detectedAt: string
