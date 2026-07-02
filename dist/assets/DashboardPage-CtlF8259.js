@@ -1,0 +1,1 @@
+import{j as e}from"./index-CjatMUXs.js";function s(){return e.jsxs("div",{className:"p-6 md:p-10",children:[e.jsx("h1",{className:"text-2xl font-bold text-white",children:"Dashboard"}),e.jsx("p",{className:"mt-2 text-sm text-slate-400",children:"Market overview, trending tokens, and network status land here in Step 1."})]})}export{s as default};

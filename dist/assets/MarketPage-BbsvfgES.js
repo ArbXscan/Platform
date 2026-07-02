@@ -1,0 +1,1 @@
+import{j as e}from"./index-CjatMUXs.js";function s(){return e.jsxs("div",{className:"p-6 md:p-10",children:[e.jsx("h1",{className:"text-2xl font-bold text-white",children:"Market"}),e.jsx("p",{className:"mt-2 text-sm text-slate-400",children:"Trending, top gainers/losers, and volume/liquidity tabs land here in Step 4."})]})}export{s as default};

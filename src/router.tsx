@@ -1,19 +1,19 @@
-import { lazy, Suspense } from "react"
-import { Routes, Route } from "react-router-dom"
-import { AppLayout } from "../components/layout/AppLayout"
+import { lazy, Suspense } from "react";
+import { Routes, Route } from "react-router-dom";
+import { AppLayout } from "./components/layout/AppLayout";
 
-const HomePage = lazy(() => import("../pages/home/HomePage"))
-const DashboardPage = lazy(() => import("../pages/dashboard/DashboardPage"))
-const TokenDetailPage = lazy(() => import("../pages/token/TokenDetailPage"))
-const ArbitragePage = lazy(() => import("../pages/arbitrage/ArbitragePage"))
-const MarketPage = lazy(() => import("../pages/market/MarketPage"))
+const HomePage = lazy(() => import("./pages/home/HomePage"));
+const DashboardPage = lazy(() => import("./pages/dashboard/DashboardPage"));
+const TokenDetailPage = lazy(() => import("./pages/token/TokenDetailPage"));
+const ArbitragePage = lazy(() => import("./pages/arbitrage/ArbitragePage"));
+const MarketPage = lazy(() => import("./pages/market/MarketPage"));
 
 function PageLoader() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-slate-950 text-slate-400">
       Loading...
     </div>
-  )
+  );
 }
 
 export function AppRouter() {
@@ -30,5 +30,5 @@ export function AppRouter() {
         </Route>
       </Routes>
     </Suspense>
-  )
+  );
 }
