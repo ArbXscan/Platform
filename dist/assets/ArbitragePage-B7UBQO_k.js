@@ -1,1 +1,0 @@
-import{j as e}from"./index-CjatMUXs.js";function s(){return e.jsxs("div",{className:"p-6 md:p-10",children:[e.jsx("h1",{className:"text-2xl font-bold text-white",children:"Arbitrage Scanner"}),e.jsx("p",{className:"mt-2 text-sm text-slate-400",children:"Live opportunities with buy/sell spread and confidence score land here in Step 3."})]})}export{s as default};
