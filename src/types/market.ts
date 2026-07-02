@@ -1,24 +1,34 @@
 import type { DataSourceMeta } from "./api"
-import type { Token, TokenPrice } from "./token"
 
+/**
+ * Deliberately NOT a full Token — GeckoTerminal's trending_pools endpoint (used to
+ * populate this) doesn't return the base token's contract address by default, only
+ * pair name/price/volume. See services/providers/geckoterminal.ts for the raw shape.
+ */
 export interface TrendingToken {
-  token: Token
-  price: TokenPrice
-  rank: number
+  pairName: string
+  chainId: string
+  priceUsd: number
+  change24h: number | null
+  volume24hUsd: number
+  poolUrl: string
+  source: DataSourceMeta
 }
 
 export interface MarketMover {
-  token: Token
+  pairName: string
   changePercent: number
 }
 
-/** Aggregate payload for the Dashboard's market overview section. */
-export interface MarketOverview {
-  totalMarketCapUsd: number
-  totalVolume24hUsd: number
+/**
+ * Snapshot derived from the pairs we actually track — NOT a true global market cap.
+ * Neither DexScreener nor GeckoTerminal's free API exposes a whole-market aggregate,
+ * so we don't claim one (see docs/PRD/09-API_PROVIDER_SECURITY.md on not overstating data).
+ */
+export interface MarketSnapshot {
+  trackedPairCount: number
+  volume24hUsd: number
   trending: TrendingToken[]
-  topGainers: MarketMover[]
-  topLosers: MarketMover[]
   source: DataSourceMeta
 }
 
