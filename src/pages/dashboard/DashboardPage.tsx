@@ -2,6 +2,7 @@ import { useState, type FormEvent } from "react"
 import { useNavigate } from "react-router-dom"
 import { FiActivity, FiGlobe, FiInbox, FiLayers, FiSearch } from "react-icons/fi"
 import { TrendingVolumeChart } from "../../components/charts/TrendingVolumeChart"
+import { ChainLogo } from "../../components/shared/ChainLogo"
 import { EmptyState } from "../../components/shared/EmptyState"
 import { SourceBadge } from "../../components/shared/SourceBadge"
 import { StatCard } from "../../components/shared/StatCard"
@@ -130,8 +131,9 @@ export default function DashboardPage() {
           {SUPPORTED_CHAINS.map((chain) => (
             <span
               key={chain.id}
-              className="rounded-full border border-white/10 bg-white/[0.03] px-3 py-1 text-xs text-slate-300"
+              className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.03] px-3 py-1 text-xs text-slate-300"
             >
+              <ChainLogo chainId={chain.id} size={14} />
               {chain.name}
             </span>
           ))}

@@ -1,14 +1,31 @@
 import { useState } from "react"
+import arbitrumLogo from "../../assets/chains/arbitrum.svg"
+import avalancheLogo from "../../assets/chains/avalanche.svg"
+import baseLogo from "../../assets/chains/base.svg"
+import bnbLogo from "../../assets/chains/bnb.svg"
+import ethereumLogo from "../../assets/chains/ethereum.svg"
+import optimismLogo from "../../assets/chains/optimism.svg"
+import polygonLogo from "../../assets/chains/polygon.svg"
+import solanaLogo from "../../assets/chains/solana.svg"
+
+/** Real official SVGs, bundled from src/assets/chains/ (statically imported, so a missing file fails the build loudly instead of silently 404-ing at runtime). */
+const CHAIN_ASSETS: Record<string, string> = {
+  ethereum: ethereumLogo,
+  arbitrum: arbitrumLogo,
+  avalanche: avalancheLogo,
+  base: baseLogo,
+  bnb: bnbLogo,
+  optimism: optimismLogo,
+  polygon: polygonLogo,
+  solana: solanaLogo,
+}
 
 interface ChainStyle {
   label: string
   className: string
 }
 
-/**
- * Official brand colors per chain (publicly documented, stable) — used only for
- * the final monogram fallback tier, never as the primary representation.
- */
+/** Official brand colors per chain — used only for the monogram fallback tier. */
 const CHAIN_STYLES: Record<string, ChainStyle> = {
   ethereum: { label: "E", className: "bg-[#627EEA] text-white" },
   solana: { label: "S", className: "bg-gradient-to-br from-[#9945FF] to-[#14F195] text-white" },
@@ -25,46 +42,38 @@ const FALLBACK_STYLE: ChainStyle = { label: "?", className: "bg-slate-700 text-s
 interface ChainLogoProps {
   chainId: string
   /**
-   * Optional logo URL from a data provider — tried after the local asset and
-   * before the monogram. No provider currently wired into this project returns
-   * a per-chain logo URL (GeckoTerminal/DexScreener give per-token logos, not
-   * per-chain), so this tier is unused today but the prop exists so one can be
-   * plugged in later (e.g. a future chain-metadata provider) without touching
-   * this component again.
+   * Optional logo URL from a data provider — tried if chainId isn't one of the
+   * 8 chains with a bundled asset above. No provider currently returns a
+   * per-chain logo, so this tier is effectively unused today; kept for forward
+   * compatibility (props unchanged, per the integration scope).
    */
   logoUrl?: string
   size?: number
   className?: string
 }
 
-type Stage = "asset" | "logoUrl" | "monogram"
+type Stage = "logoUrl" | "monogram"
 
-/**
- * Three-tier fallback: local SVG asset (public/chains/{chainId}.svg) → provided
- * logoUrl → colored monogram. The local asset files don't exist yet in this repo
- * (this sandbox has no network access to fetch/vendor them — see the
- * implementation report), so today every chain resolves straight to the
- * monogram tier. Once real SVGs are dropped into public/chains/ (same path
- * constants/landing.ts's SUPPORTED_CHAINS already expects for the landing page
- * carousel), this component picks them up automatically — no code change needed.
- */
 export function ChainLogo({ chainId, logoUrl, size = 20, className = "" }: ChainLogoProps) {
-  const [stage, setStage] = useState<Stage>("asset")
+  const [stage, setStage] = useState<Stage>("logoUrl")
   const dimension = { width: size, height: size }
+  const asset = CHAIN_ASSETS[chainId]
 
-  if (stage === "asset") {
+  // Tier 1: real bundled SVG. Statically imported above, so this is always
+  // present for the 8 known chains — no runtime existence check needed.
+  if (asset) {
     return (
       <img
-        src={`/chains/${chainId}.svg`}
+        src={asset}
         alt=""
         aria-hidden="true"
         style={dimension}
         className={`shrink-0 rounded-full ${className}`}
-        onError={() => setStage(logoUrl ? "logoUrl" : "monogram")}
       />
     )
   }
 
+  // Tier 2: provider-supplied logoUrl, for chains without a bundled asset.
   if (stage === "logoUrl" && logoUrl) {
     return (
       <img
@@ -78,6 +87,7 @@ export function ChainLogo({ chainId, logoUrl, size = 20, className = "" }: Chain
     )
   }
 
+  // Tier 3: colored monogram.
   const style = CHAIN_STYLES[chainId] ?? FALLBACK_STYLE
   return (
     <span
