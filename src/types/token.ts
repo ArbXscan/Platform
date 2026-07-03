@@ -51,4 +51,6 @@ export interface TokenSearchResult extends Token {
   volume24hUsd: number
   /** Primary DEX this candidate trades on (highest-liquidity pool for this token). */
   dexId: string
+  /** True when this candidate's symbol/name matches an entry in the Official Asset Registry (src/registry/assets). Identity signal only — never implies price/liquidity accuracy. */
+  isRecognized?: boolean
 }

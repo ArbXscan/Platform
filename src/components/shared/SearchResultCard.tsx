@@ -33,6 +33,11 @@ export function SearchResultCard({ result, onSelect }: SearchResultCardProps) {
         <div className="flex items-center gap-2">
           <span className="truncate font-medium text-white">{result.name}</span>
           <span className="shrink-0 text-sm text-slate-400">{result.symbol}</span>
+          {result.isRecognized && (
+            <span className="shrink-0 rounded-full bg-cyan-400/10 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-cyan-300">
+              Recognized
+            </span>
+          )}
         </div>
         <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-slate-500">
           <span className="flex items-center gap-1.5">

@@ -1,3 +1,4 @@
+import { findRecognizedAsset } from "../../registry/assets"
 import { searchPairs, type DexScreenerPair } from "../../services/providers/dexscreener"
 import type { TokenSearchResult } from "../../types/token"
 
@@ -14,7 +15,17 @@ function toNumber(value: string | number | null | undefined): number {
  * the name of the query (tier 0) is excluded entirely — DexScreener's search
  * already applies some server-side relevance, but nothing here assumes that;
  * every candidate is checked against the query directly.
+ *
+ * TIER_RECOGNIZED sits above TIER_EXACT_SYMBOL: when a candidate is both an
+ * exact/prefix match for the query AND corresponds to a globally important
+ * asset in the Official Asset Registry (src/registry/assets), it's boosted
+ * above other exact-symbol matches. This is what makes "BTC" surface the
+ * canonical Bitcoin-ticker pair ahead of similarly-named wrapped or meme
+ * tokens sharing the same ticker string. It does not — and cannot — verify
+ * that a given pair is genuinely legitimate; within a tier, liquidity/volume
+ * still tie-break, which in practice favors the pair with real backing.
  */
+const TIER_RECOGNIZED = 6
 const TIER_EXACT_SYMBOL = 5
 const TIER_EXACT_NAME = 4
 const TIER_PREFIX = 3
@@ -38,6 +49,7 @@ interface CandidateGroup {
   liquidityUsd: number
   volume24hUsd: number
   bestPair: DexScreenerPair
+  isRecognized: boolean
 }
 
 /**
@@ -52,8 +64,15 @@ function groupByToken(query: string, pairs: DexScreenerPair[]): Map<string, Cand
   const groups = new Map<string, CandidateGroup>()
 
   for (const pair of pairs) {
-    const tier = matchTier(query, pair.baseToken.symbol, pair.baseToken.name)
+    let tier = matchTier(query, pair.baseToken.symbol, pair.baseToken.name)
     if (tier === TIER_NONE) continue // irrelevant to the query — never shown, regardless of liquidity
+
+    const isRecognized = Boolean(
+      findRecognizedAsset(pair.baseToken.symbol) ?? findRecognizedAsset(pair.baseToken.name),
+    )
+    if (isRecognized && tier >= TIER_PREFIX) {
+      tier = TIER_RECOGNIZED
+    }
 
     const key = `${pair.chainId}:${pair.baseToken.address}`
     const liquidityUsd = pair.liquidity?.usd ?? 0
@@ -61,11 +80,12 @@ function groupByToken(query: string, pairs: DexScreenerPair[]): Map<string, Cand
     const existing = groups.get(key)
 
     if (!existing) {
-      groups.set(key, { tier, liquidityUsd, volume24hUsd, bestPair: pair })
+      groups.set(key, { tier, liquidityUsd, volume24hUsd, bestPair: pair, isRecognized })
       continue
     }
 
     existing.tier = Math.max(existing.tier, tier)
+    existing.isRecognized = existing.isRecognized || isRecognized
     existing.liquidityUsd += liquidityUsd
     existing.volume24hUsd += volume24hUsd
     if (liquidityUsd > (existing.bestPair.liquidity?.usd ?? 0)) {
@@ -91,6 +111,7 @@ function toSearchResult(group: CandidateGroup): TokenSearchResult {
     liquidityUsd: group.liquidityUsd,
     volume24hUsd: group.volume24hUsd,
     dexId: bestPair.dexId,
+    isRecognized: group.isRecognized,
   }
 }
 
