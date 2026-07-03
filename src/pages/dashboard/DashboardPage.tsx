@@ -1,9 +1,11 @@
 import { useState, type FormEvent } from "react"
 import { useNavigate } from "react-router-dom"
-import { FiSearch } from "react-icons/fi"
+import { FiActivity, FiGlobe, FiInbox, FiLayers, FiSearch } from "react-icons/fi"
 import { TrendingVolumeChart } from "../../components/charts/TrendingVolumeChart"
+import { EmptyState } from "../../components/shared/EmptyState"
 import { SourceBadge } from "../../components/shared/SourceBadge"
 import { StatCard } from "../../components/shared/StatCard"
+import { Skeleton, StatCardSkeleton } from "../../components/ui/Skeleton"
 import { SUPPORTED_CHAINS, DEFAULT_CHAIN_ID } from "../../constants/chains"
 import { useMarketData } from "../../hooks/useMarketData"
 
@@ -15,6 +17,7 @@ export default function DashboardPage() {
   const [query, setQuery] = useState("")
   const navigate = useNavigate()
   const { snapshot, status, error } = useMarketData(DEFAULT_CHAIN_ID)
+  const loadingInitial = status === "loading" && !snapshot
 
   function handleSearch(e: FormEvent) {
     e.preventDefault()
@@ -32,8 +35,12 @@ export default function DashboardPage() {
         </div>
 
         <form onSubmit={handleSearch} className="relative w-full md:w-72">
-          <FiSearch className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
+          <FiSearch className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" aria-hidden="true" />
+          <label htmlFor="dashboard-search" className="sr-only">
+            Search token, symbol, or address
+          </label>
           <input
+            id="dashboard-search"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Search token, symbol, or address"
@@ -49,13 +56,24 @@ export default function DashboardPage() {
       )}
 
       <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-3">
-        <StatCard label="Tracked Pairs" value={status === "loading" ? "…" : String(snapshot?.trackedPairCount ?? 0)} />
-        <StatCard
-          label="24h Volume (tracked)"
-          value={status === "loading" ? "…" : formatUsd(snapshot?.volume24hUsd ?? 0)}
-          hint="Sum across tracked pairs, not the whole market"
-        />
-        <StatCard label="Chains Monitored" value={String(SUPPORTED_CHAINS.length)} />
+        {loadingInitial ? (
+          <>
+            <StatCardSkeleton />
+            <StatCardSkeleton />
+            <StatCardSkeleton />
+          </>
+        ) : (
+          <>
+            <StatCard icon={FiLayers} label="Tracked Pairs" value={String(snapshot?.trackedPairCount ?? 0)} />
+            <StatCard
+              icon={FiActivity}
+              label="24h Volume (tracked)"
+              value={formatUsd(snapshot?.volume24hUsd ?? 0)}
+              hint="Sum across tracked pairs, not the whole market"
+            />
+            <StatCard icon={FiGlobe} label="Chains Monitored" value={String(SUPPORTED_CHAINS.length)} />
+          </>
+        )}
       </div>
 
       <div className="mt-8">
@@ -65,8 +83,15 @@ export default function DashboardPage() {
         </div>
 
         <div className="rounded-xl border border-white/10 bg-white/[0.03] p-4">
-          {status === "loading" && !snapshot ? (
-            <p className="py-8 text-center text-sm text-slate-500">Loading trending pairs…</p>
+          {loadingInitial ? (
+            <div className="space-y-3 py-2">
+              {Array.from({ length: 6 }).map((_, i) => (
+                <div key={i} className="flex items-center justify-between">
+                  <Skeleton className="h-4 w-32" />
+                  <Skeleton className="h-4 w-20" />
+                </div>
+              ))}
+            </div>
           ) : snapshot && snapshot.trending.length > 0 ? (
             <>
               <TrendingVolumeChart data={snapshot.trending} />
@@ -77,7 +102,7 @@ export default function DashboardPage() {
                     href={t.poolUrl}
                     target="_blank"
                     rel="noreferrer"
-                    className="flex items-center justify-between py-2.5 text-sm hover:bg-white/[0.03]"
+                    className="flex items-center justify-between py-2.5 text-sm transition-colors hover:bg-white/[0.03] focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400/40"
                   >
                     <span className="font-medium text-white">{t.pairName}</span>
                     <span className="flex items-center gap-4 text-slate-400">
@@ -94,7 +119,7 @@ export default function DashboardPage() {
               </div>
             </>
           ) : (
-            <p className="py-8 text-center text-sm text-slate-500">No trending pairs found right now.</p>
+            <EmptyState icon={FiInbox} title="No trending pairs found right now" />
           )}
         </div>
       </div>

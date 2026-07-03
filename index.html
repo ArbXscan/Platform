@@ -5,6 +5,21 @@
 
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
 
+    <!--
+      TEMPORARY: loading Inter from Google Fonts. This is NOT the final
+      implementation — it should move to a self-hosted local font (e.g.
+      src/assets/fonts/Inter-*.woff2 + @font-face in index.css) so the app
+      doesn't depend on an external font CDN. Not done yet because this
+      sandbox has no network access to download the font files; swap this
+      <link> block for local @font-face once the .woff2 files are added.
+    -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+
     <meta
       name="viewport"
       content="width=device-width, initial-scale=1.0"

@@ -1,4 +1,5 @@
 import type { SupportedChain } from "../../types/landing"
+import { ChainLogo } from "./ChainLogo"
 
 interface LogoCarouselProps {
   items: SupportedChain[]
@@ -16,15 +17,13 @@ export function LogoCarousel({ items }: LogoCarouselProps) {
             key={`${chain.id}-${i}`}
             className="flex shrink-0 items-center gap-3 opacity-70 transition-opacity hover:opacity-100"
           >
-            <img
-              src={chain.logo}
-              alt={chain.name}
-              className="h-8 w-8"
-              loading="lazy"
-              onError={(e) => {
-                ;(e.currentTarget as HTMLImageElement).style.display = "none"
-              }}
-            />
+            {/*
+              Previously: a raw <img src={chain.logo}> that silently hid itself
+              on error (display: none), so a missing logo file meant a blank gap.
+              ChainLogo does the same asset-first lookup but falls back to a
+              brand-colored monogram instead of disappearing.
+            */}
+            <ChainLogo chainId={chain.id} logoUrl={chain.logo} size={32} />
             <span className="text-lg font-semibold text-slate-200">{chain.name}</span>
           </div>
         ))}

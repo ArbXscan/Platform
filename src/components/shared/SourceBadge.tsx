@@ -1,3 +1,4 @@
+import { Tooltip } from "../ui/Tooltip"
 import type { DataSourceMeta } from "../../types/api"
 
 const CONFIDENCE_STYLES: Record<DataSourceMeta["confidence"], string> = {
@@ -17,11 +18,13 @@ function timeAgo(iso: string): string {
 
 export function SourceBadge({ source }: { source: DataSourceMeta }) {
   return (
-    <span
-      className={`inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-[11px] font-medium ${CONFIDENCE_STYLES[source.confidence]}`}
-      title={`Source: ${source.provider} · Confidence: ${source.confidence} · Fetched ${timeAgo(source.fetchedAt)}`}
-    >
-      {source.provider} · {timeAgo(source.fetchedAt)}
-    </span>
+    <Tooltip content={`Source: ${source.provider} · Confidence: ${source.confidence} · Fetched ${timeAgo(source.fetchedAt)}`}>
+      <span
+        tabIndex={0}
+        className={`inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-[11px] font-medium transition-colors ${CONFIDENCE_STYLES[source.confidence]}`}
+      >
+        {source.provider} · {timeAgo(source.fetchedAt)}
+      </span>
+    </Tooltip>
   )
 }

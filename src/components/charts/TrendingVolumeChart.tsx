@@ -33,7 +33,7 @@ export function TrendingVolumeChart({ data }: TrendingVolumeChartProps) {
         <Tooltip
           contentStyle={{ background: "#0f172a", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8 }}
           labelStyle={{ color: "#e2e8f0" }}
-          formatter={(value: number) => [`$${value.toLocaleString()}`, "24h Volume"]}
+          formatter={(value) => [`$${Number(value).toLocaleString()}`, "24h Volume"]}
         />
         <Bar dataKey="volume" fill="#22d3ee" radius={[4, 4, 0, 0]} />
       </BarChart>

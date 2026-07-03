@@ -1,7 +1,15 @@
 import { useParams } from "react-router-dom"
+import { FiExternalLink, FiSearch } from "react-icons/fi"
+import { ChainLogo } from "../../components/shared/ChainLogo"
+import { CopyButton } from "../../components/shared/CopyButton"
+import { DexLogo } from "../../components/shared/DexLogo"
+import { EmptyState } from "../../components/shared/EmptyState"
 import { SourceBadge } from "../../components/shared/SourceBadge"
 import { StatCard } from "../../components/shared/StatCard"
+import { TokenLogo } from "../../components/shared/TokenLogo"
+import { Skeleton, StatCardSkeleton } from "../../components/ui/Skeleton"
 import { getChainById } from "../../constants/chains"
+import { getExplorer } from "../../constants/explorers"
 import { useToken } from "../../hooks/useToken"
 
 function formatUsd(value: number): string {
@@ -20,11 +28,25 @@ function truncateAddress(address: string): string {
 export default function TokenDetailPage() {
   const { query } = useParams<{ query: string }>()
   const { token, status, error } = useToken(query)
+  const explorer = token ? getExplorer(token.chainId) : undefined
 
   return (
     <div className="p-6 md:p-10">
       {status === "loading" && !token && (
-        <p className="py-8 text-center text-sm text-slate-500">Looking up "{query}"…</p>
+        <div>
+          <div className="flex items-center gap-3">
+            <Skeleton className="h-10 w-10 rounded-full" />
+            <div>
+              <Skeleton className="h-6 w-40" />
+              <Skeleton className="mt-2 h-3 w-24" />
+            </div>
+          </div>
+          <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <StatCardSkeleton key={i} />
+            ))}
+          </div>
+        </div>
       )}
 
       {error && (
@@ -37,21 +59,13 @@ export default function TokenDetailPage() {
         <>
           <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
             <div className="flex items-center gap-3">
-              {token.logoUrl && (
-                <img
-                  src={token.logoUrl}
-                  alt={token.symbol}
-                  className="h-10 w-10 rounded-full bg-white/5"
-                  onError={(e) => {
-                    e.currentTarget.style.display = "none"
-                  }}
-                />
-              )}
+              <TokenLogo logoUrl={token.logoUrl} symbol={token.symbol} size={40} />
               <div>
                 <h1 className="text-2xl font-bold text-white">
                   {token.name} <span className="text-slate-400">({token.symbol})</span>
                 </h1>
-                <p className="mt-1 text-sm text-slate-400">
+                <p className="mt-1 flex items-center gap-1.5 text-sm text-slate-400">
+                  <ChainLogo chainId={token.chainId} size={16} />
                   {getChainById(token.chainId)?.name ?? token.chainId}
                 </p>
               </div>
@@ -86,14 +100,33 @@ export default function TokenDetailPage() {
 
           <div className="mt-8">
             <h2 className="mb-3 text-lg font-semibold text-white">Contract</h2>
-            <div className="flex items-center justify-between rounded-xl border border-white/10 bg-white/[0.03] p-4">
-              <code className="text-sm text-slate-300">{truncateAddress(token.address)}</code>
-              <button
-                onClick={() => navigator.clipboard.writeText(token.address)}
-                className="rounded-md border border-white/10 px-3 py-1 text-xs text-slate-300 hover:bg-white/[0.05]"
-              >
-                Copy
-              </button>
+            <div className="flex flex-col gap-3 rounded-xl border border-white/10 bg-white/[0.03] p-4 sm:flex-row sm:items-center sm:justify-between">
+              <code className="break-all text-sm text-slate-300">{truncateAddress(token.address)}</code>
+              <div className="flex flex-wrap gap-2">
+                <CopyButton value={token.address} label="Copy address" />
+                {explorer && (
+                  <a
+                    href={explorer.addressUrl(token.address)}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-flex items-center gap-1.5 rounded-md border border-white/10 px-3 py-1 text-xs text-slate-300 transition-colors hover:bg-white/[0.05] focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400/40"
+                  >
+                    <FiExternalLink aria-hidden="true" />
+                    {explorer.name}
+                  </a>
+                )}
+                {token.sourceUrl && (
+                  <a
+                    href={token.sourceUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-flex items-center gap-1.5 rounded-md border border-white/10 px-3 py-1 text-xs text-slate-300 transition-colors hover:bg-white/[0.05] focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400/40"
+                  >
+                    <FiExternalLink aria-hidden="true" />
+                    DexScreener
+                  </a>
+                )}
+              </div>
             </div>
           </div>
 
@@ -103,8 +136,9 @@ export default function TokenDetailPage() {
               {token.supportedExchanges.map((dexId) => (
                 <span
                   key={dexId}
-                  className="rounded-full border border-white/10 bg-white/[0.03] px-3 py-1 text-xs text-slate-300"
+                  className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.03] px-3 py-1 text-xs text-slate-300"
                 >
+                  <DexLogo dexId={dexId} size={14} />
                   {dexId}
                 </span>
               ))}
@@ -132,7 +166,11 @@ export default function TokenDetailPage() {
       )}
 
       {!token && status !== "loading" && !error && (
-        <p className="py-8 text-center text-sm text-slate-500">No token specified.</p>
+        <EmptyState
+          icon={FiSearch}
+          title="No token specified"
+          description="Search for a token by contract address, symbol, or name from the Dashboard."
+        />
       )}
     </div>
   )

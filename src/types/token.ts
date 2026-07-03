@@ -40,6 +40,8 @@ export interface TokenDetail extends Token {
   liquidity: TokenLiquidity
   stats: TokenMarketStats
   supportedExchanges: string[]
+  /** Link to the primary pair's page on its data source (e.g. DexScreener). */
+  sourceUrl?: string
 }
 
 /** Lightweight shape used in search results / autocomplete, before the full detail is fetched. */

@@ -79,6 +79,7 @@ function toTokenDetail(pairs: DexScreenerPair[]): TokenDetail {
       source,
     },
     supportedExchanges,
+    sourceUrl: primary.url,
   }
 }
 
