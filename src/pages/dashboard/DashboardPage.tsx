@@ -22,7 +22,7 @@ export default function DashboardPage() {
 
   function handleSearch(e: FormEvent) {
     e.preventDefault()
-    if (query.trim()) navigate(`/app/token/${encodeURIComponent(query.trim())}`)
+    if (query.trim()) navigate(`/app/search?q=${encodeURIComponent(query.trim())}`)
   }
 
   return (

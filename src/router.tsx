@@ -4,6 +4,7 @@ import { AppLayout } from "./components/layout/AppLayout";
 
 const HomePage = lazy(() => import("./pages/home/HomePage"));
 const DashboardPage = lazy(() => import("./pages/dashboard/DashboardPage"));
+const SearchResultsPage = lazy(() => import("./pages/search/SearchResultsPage"));
 const TokenDetailPage = lazy(() => import("./pages/token/TokenDetailPage"));
 const ArbitragePage = lazy(() => import("./pages/arbitrage/ArbitragePage"));
 const MarketPage = lazy(() => import("./pages/market/MarketPage"));
@@ -24,6 +25,7 @@ export function AppRouter() {
 
         <Route path="/app" element={<AppLayout />}>
           <Route index element={<DashboardPage />} />
+          <Route path="search" element={<SearchResultsPage />} />
           <Route path="token/:query" element={<TokenDetailPage />} />
           <Route path="arbitrage" element={<ArbitragePage />} />
           <Route path="market" element={<MarketPage />} />

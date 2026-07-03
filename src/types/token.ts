@@ -47,4 +47,8 @@ export interface TokenDetail extends Token {
 /** Lightweight shape used in search results / autocomplete, before the full detail is fetched. */
 export interface TokenSearchResult extends Token {
   priceUsd?: number
+  liquidityUsd: number
+  volume24hUsd: number
+  /** Primary DEX this candidate trades on (highest-liquidity pool for this token). */
+  dexId: string
 }
