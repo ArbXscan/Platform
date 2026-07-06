@@ -1,6 +1,6 @@
 import { useState } from "react"
 import { Link, useLocation } from "react-router-dom"
-import { FiGrid, FiZap, FiBarChart2, FiArrowLeft, FiMenu, FiX } from "react-icons/fi"
+import { FiGrid, FiZap, FiBarChart2, FiSearch, FiArrowLeft, FiMenu, FiX } from "react-icons/fi"
 
 interface NavItem {
   label: string
@@ -10,6 +10,7 @@ interface NavItem {
 
 const NAV_ITEMS: NavItem[] = [
   { label: "Dashboard", to: "/app", icon: FiGrid },
+  { label: "Scanner", to: "/app/scanner", icon: FiSearch },
   { label: "Arbitrage Scanner", to: "/app/arbitrage", icon: FiZap },
   { label: "Market", to: "/app/market", icon: FiBarChart2 },
 ]

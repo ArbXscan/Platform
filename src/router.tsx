@@ -8,6 +8,7 @@ const SearchResultsPage = lazy(() => import("./pages/search/SearchResultsPage"))
 const TokenDetailPage = lazy(() => import("./pages/token/TokenDetailPage"));
 const ArbitragePage = lazy(() => import("./pages/arbitrage/ArbitragePage"));
 const MarketPage = lazy(() => import("./pages/market/MarketPage"));
+const ScannerPage = lazy(() => import("./pages/scanner/ScannerPage"));
 
 function PageLoader() {
   return (
@@ -29,6 +30,7 @@ export function AppRouter() {
           <Route path="token/:query" element={<TokenDetailPage />} />
           <Route path="arbitrage" element={<ArbitragePage />} />
           <Route path="market" element={<MarketPage />} />
+          <Route path="scanner" element={<ScannerPage />} />
         </Route>
       </Routes>
     </Suspense>
