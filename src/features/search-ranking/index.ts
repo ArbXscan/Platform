@@ -2,7 +2,7 @@ export type { AssetCategory, AssetIdentityReport, IdentityConfidence, MatchType,
 export { calculateSearchConfidenceScore } from "./confidence"
 export { dedupeAssetIdentityReports, dedupeRankedResults } from "./dedupe"
 export { classifyMatch, hasExactNameMatch, hasExactSymbolMatch, normalizeSearchQuery } from "./filters"
-export { calculatePriorityScore } from "./priority"
+export { calculatePriorityScore, isOfficialWrappedAsset } from "./priority"
 export { rankAssets } from "./ranking"
 export { searchAndRankAssets } from "./search-ranking"
 export { buildRankedResult, compareRankedResults } from "./scoring"
