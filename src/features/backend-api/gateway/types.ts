@@ -69,3 +69,44 @@ export interface ProviderCredentialRef {
   providerId: string
   envVarName: string
 }
+
+/** Retry policy for a provider adapter call. */
+export interface RetryPolicy {
+  maxAttempts: number
+  delayMs: number
+}
+
+export type ProviderHealthStatus = "healthy" | "degraded" | "unhealthy" | "unknown"
+
+/** Rolling health state for one provider, derived from its recent call outcomes. */
+export interface ProviderHealthRecord {
+  providerId: string
+  status: ProviderHealthStatus
+  consecutiveFailures: number
+  consecutiveSuccesses: number
+  lastSuccessAt?: string
+  lastFailureAt?: string
+}
+
+/** Cumulative call statistics for one provider since startup or the last reset. */
+export interface ProviderMetricsSnapshot {
+  providerId: string
+  totalCalls: number
+  successCount: number
+  errorCount: number
+  unsupportedCount: number
+  cacheHitCount: number
+  averageDurationMs: number
+  lastDurationMs?: number
+}
+
+/**
+ * Per-call options for requestProviderData. Every field is optional and
+ * additive — omitting all of them preserves the exact prior behavior
+ * (single attempt, no timeout, default cache TTL).
+ */
+export interface RequestProviderDataOptions {
+  ttlMs?: number
+  retry?: RetryPolicy
+  timeoutMs?: number
+}
