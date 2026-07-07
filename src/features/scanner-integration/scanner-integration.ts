@@ -1,3 +1,5 @@
+import { runAssetRegistryStage } from "./asset-registry-stage"
+import { runBackendApiStage } from "./backend-api-stage"
 import { runIdentityStage } from "./identity-stage"
 import { runRecommendationStage } from "./recommendation-stage"
 import { runScanStage } from "./scan-stage"
@@ -14,6 +16,11 @@ import type { ScannerIntegrationReport, ScannerIntegrationRequest } from "./type
  * unchanged. This function calculates nothing itself — no risk, spread,
  * score, confidence, or recommendation logic lives here, only sequencing
  * and short-circuiting.
+ *
+ * Asset Registry and Backend API lookups, plus the unwrapped `verification`
+ * field, are additive and supplementary: they never gate or alter the
+ * short-circuit behavior described below, and every existing field/reason
+ * string is unchanged from before this milestone.
  *
  * Short-circuit behavior:
  *  - no search result → stop (every later stage reports "skipped")
@@ -32,6 +39,9 @@ export async function runScannerIntegration(request: ScannerIntegrationRequest):
       tokenScan: { status: "skipped" },
       crossChain: { status: "skipped" },
       recommendation: { status: "skipped" },
+      assetRegistry: { status: "skipped" },
+      backendApi: { status: "skipped" },
+      verification: { status: "skipped" },
       reason: "No search result matched the query.",
     }
   }
@@ -45,9 +55,14 @@ export async function runScannerIntegration(request: ScannerIntegrationRequest):
       tokenScan: { status: "skipped" },
       crossChain: { status: "skipped" },
       recommendation: { status: "skipped" },
+      assetRegistry: { status: "skipped" },
+      backendApi: { status: "skipped" },
+      verification: { status: "skipped" },
       reason: "Asset identity could not be resolved for the search result.",
     }
   }
+
+  const assetRegistry = runAssetRegistryStage(assetIdentity.data.chain, assetIdentity.data.contractAddress)
 
   const tokenScan = runScanStage(assetIdentity.data.contractAddress)
 
@@ -58,16 +73,19 @@ export async function runScannerIntegration(request: ScannerIntegrationRequest):
       tokenScan,
       crossChain: { status: "skipped" },
       recommendation: { status: "skipped" },
+      assetRegistry,
+      backendApi: { status: "skipped" },
+      verification: { status: "skipped" },
       reason: tokenScan.data?.validation.reason ?? "Token address failed validation.",
     }
   }
 
   const normalizedAddress = tokenScan.data.tokenized.normalized
-  const { crossChain, recommendation } = await runRecommendationStage(
-    normalizedAddress,
-    request.snapshots,
-    request.tradeAmountUsd,
-  )
+
+  const [{ crossChain, recommendation }, backendApi] = await Promise.all([
+    runRecommendationStage(normalizedAddress, request.snapshots, request.tradeAmountUsd),
+    runBackendApiStage(assetIdentity.data.chain, normalizedAddress),
+  ])
 
   if (crossChain.status !== "success") {
     return {
@@ -76,17 +94,23 @@ export async function runScannerIntegration(request: ScannerIntegrationRequest):
       tokenScan,
       crossChain,
       recommendation: { status: "skipped" },
+      assetRegistry,
+      backendApi,
+      verification: { status: "skipped" },
       reason: "No cross-chain opportunity was found for this asset among the supplied snapshots.",
     }
   }
 
-  if (recommendation.status !== "success") {
+  if (recommendation.status !== "success" || !recommendation.data) {
     return {
       searchResult,
       assetIdentity,
       tokenScan,
       crossChain,
       recommendation,
+      assetRegistry,
+      backendApi,
+      verification: { status: "skipped" },
       reason: "A cross-chain opportunity was found but a recommendation could not be generated.",
     }
   }
@@ -97,6 +121,9 @@ export async function runScannerIntegration(request: ScannerIntegrationRequest):
     tokenScan,
     crossChain,
     recommendation,
+    assetRegistry,
+    backendApi,
+    verification: { status: "success", data: recommendation.data.verification },
     reason: "Scanner integration completed successfully.",
   }
 }

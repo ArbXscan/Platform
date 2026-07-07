@@ -6,6 +6,8 @@ import type {
 } from "../recommendation/integration"
 import type { AssetIdentity } from "../asset-identity"
 import type { AssetIdentityReport, RankedAssetResult, SearchQuery } from "../search-ranking"
+import type { AssetRegistryEntry } from "../asset-registry"
+import type { ProviderDataResponse } from "../backend-api"
 
 /** Re-exported so consumers of this layer don't need to reach into each module directly. */
 export type { AssetIdentity, RawAssetMetadataInput } from "../asset-identity"
@@ -16,6 +18,11 @@ export type {
   TokenScanResult,
 } from "../recommendation/integration"
 export type { AssetIdentityReport, RankedAssetResult, SearchQuery } from "../search-ranking"
+export type { AssetRegistryEntry } from "../asset-registry"
+export type { ProviderDataResponse } from "../backend-api"
+
+/** Carried over verbatim from RecommendationPipelineResult — never recalculated here. */
+export type VerificationEngineResult = RecommendationPipelineResult["verification"]
 
 export type StageStatus = "success" | "failed" | "skipped"
 
@@ -46,6 +53,12 @@ export interface ScannerIntegrationRequest {
  * Full, normalized report of running every stage. Nothing here is
  * recalculated — every field is exactly what the corresponding existing
  * engine produced, passed through unchanged.
+ *
+ * `assetRegistry`, `backendApi`, and `verification` are additive,
+ * supplementary fields: they never gate or alter the existing
+ * search/identity/scan/crossChain/recommendation short-circuit flow. Any
+ * consumer reading only the original five fields plus `reason` sees
+ * identical behavior to before.
  */
 export interface ScannerIntegrationReport {
   searchResult: StageResult<RankedAssetResult>
@@ -54,4 +67,31 @@ export interface ScannerIntegrationReport {
   crossChain: StageResult<CrossChainOpportunityReport>
   recommendation: StageResult<RecommendationPipelineResult>
   reason: string
+  /** Asset Registry lookup for the resolved asset, if one is registered (features/asset-registry). Supplementary — never overrides Asset Identity's own resolution. */
+  assetRegistry?: StageResult<AssetRegistryEntry>
+  /** Raw market-data provider status for the resolved asset via the Backend API Gateway (features/backend-api). Supplementary telemetry only. */
+  backendApi?: StageResult<ProviderDataResponse>
+  /** Unwrapped from `recommendation.data.verification` for direct access — not a new engine call. */
+  verification?: StageResult<VerificationEngineResult>
+}
+
+/**
+ * Normalized, flat view of one successful scan, built only from fields the
+ * existing engines already produced (no field here is calculated). Used
+ * for aggregating multiple scans into a single opportunity list.
+ */
+export interface ScannerOpportunity {
+  assetSymbol: string
+  buyChainId: string
+  buyExchange: string
+  sellChainId: string
+  sellExchange: string
+  spreadPercent?: number
+  bridgeRequirementLevel: CrossChainOpportunityReport["bridgeRequirement"]["level"]
+  overallScore?: RecommendationPipelineResult["scoring"]["overallScore"]
+  starRating?: RecommendationPipelineResult["scoring"]["starRating"]
+  recommendationLevel: RecommendationPipelineResult["recommendation"]["recommendationLevel"]
+  overallRiskLevel: RecommendationPipelineResult["risk"]["overallLevel"]
+  overallConfidence: RecommendationPipelineResult["recommendation"]["overallConfidence"]
+  detectedAt: string
 }
