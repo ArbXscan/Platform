@@ -25,3 +25,6 @@ export {
   TheGraphProviderAdapter,
   registerAllProviderAdapters,
 } from "./adapters"
+
+export type { BackendCache, CacheEntry, CacheStats } from "./cache"
+export { createMemoryCache } from "./cache"
