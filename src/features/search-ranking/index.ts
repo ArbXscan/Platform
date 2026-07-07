@@ -1,5 +1,7 @@
 export type { AssetCategory, AssetIdentityReport, IdentityConfidence, MatchType, RankedAssetResult, SearchQuery } from "./types"
-export { classifyMatch, hasExactNameMatch, hasExactSymbolMatch } from "./filters"
+export { calculateSearchConfidenceScore } from "./confidence"
+export { dedupeAssetIdentityReports, dedupeRankedResults } from "./dedupe"
+export { classifyMatch, hasExactNameMatch, hasExactSymbolMatch, normalizeSearchQuery } from "./filters"
 export { calculatePriorityScore } from "./priority"
 export { rankAssets } from "./ranking"
 export { searchAndRankAssets } from "./search-ranking"

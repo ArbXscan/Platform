@@ -49,6 +49,8 @@ export interface RankedAssetResult {
   matchType: MatchType
   /** Deterministic, non-negative priority score used for primary sorting. Higher ranks first. */
   score: number
+  /** Normalized 0-100 confidence score derived from match specificity and identity confidence. Never fabricated — always computed from matchType and asset.confidence. */
+  confidenceScore: number
   /** 1-based position in the final ranked list. */
   rank: number
 }

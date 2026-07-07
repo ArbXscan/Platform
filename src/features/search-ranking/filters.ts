@@ -5,6 +5,15 @@ function normalize(value: string): string {
 }
 
 /**
+ * Normalizes a search query (trims and lowercases its term) so callers can
+ * produce a canonical query before searching, comparing, or caching by it.
+ * Pure function — never mutates the input.
+ */
+export function normalizeSearchQuery(query: SearchQuery): SearchQuery {
+  return { term: normalize(query.term) }
+}
+
+/**
  * Classifies how (if at all) an asset matches a search query. Case-
  * insensitive throughout. Checks exact match first (symbol takes priority
  * over name when both are exact for the purposes of this single label),

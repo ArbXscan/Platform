@@ -1,4 +1,5 @@
 import { classifyMatch } from "./filters"
+import { calculateSearchConfidenceScore } from "./confidence"
 import { calculatePriorityScore } from "./priority"
 import type { AssetIdentityReport, IdentityConfidence, RankedAssetResult, SearchQuery } from "./types"
 
@@ -11,10 +12,13 @@ const CONFIDENCE_ORDER: Record<IdentityConfidence, number> = { high: 3, medium: 
  * no mutation, no randomness.
  */
 export function buildRankedResult(asset: AssetIdentityReport, query: SearchQuery): Omit<RankedAssetResult, "rank"> {
+  const matchType = classifyMatch(asset, query)
+
   return {
     asset,
-    matchType: classifyMatch(asset, query),
+    matchType,
     score: calculatePriorityScore(asset, query),
+    confidenceScore: calculateSearchConfidenceScore(matchType, asset.confidence),
   }
 }
 
