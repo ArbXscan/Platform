@@ -1,20 +1,25 @@
 import { validateOpportunity } from "./validation"
-import type { NormalizedOpportunity, OpportunityEvaluationInput } from "./types"
+import type { NormalizedOpportunity, OpportunityEvaluationInput, OpportunityValidationThresholds } from "./types"
 
 /**
  * Builds a flat NormalizedOpportunity from one comparison/risk/scoring
- * bundle. Every field is copied verbatim from the existing reports (or, for
- * `validationVerdict`, derived by validateOpportunity) — nothing here is
- * calculated, scored, or re-derived.
+ * bundle. Every field is copied verbatim from the existing reports, or, for
+ * `estimatedNetProfitUsd` and `validationVerdict`, taken directly from
+ * validateOpportunity's own result — nothing here is calculated, scored, or
+ * re-derived a second time. `thresholds` is fully optional and forwarded
+ * as-is to validateOpportunity.
  */
-export function normalizeOpportunity(input: OpportunityEvaluationInput): NormalizedOpportunity {
-  const validation = validateOpportunity(input)
+export function normalizeOpportunity(
+  input: OpportunityEvaluationInput,
+  thresholds: Partial<OpportunityValidationThresholds> = {},
+): NormalizedOpportunity {
+  const validation = validateOpportunity(input, thresholds)
 
   return {
     tokenAddress: input.comparison.tokenAddress,
     chainId: input.risk.chainId,
     spreadPercent: input.comparison.spread.spreadPercent,
-    estimatedNetProfitUsd: input.comparison.profitability.estimatedNetProfitUsd,
+    estimatedNetProfitUsd: validation.estimatedNetProfitUsd,
     confidenceScore: input.scoring.confidence.score,
     overallScore: input.scoring.overallScore,
     starRating: input.scoring.starRating,
@@ -29,6 +34,9 @@ export function normalizeOpportunity(input: OpportunityEvaluationInput): Normali
  * list. Order is preserved; no ranking or filtering happens here — pair
  * with rankOpportunities or filterValidOpportunities as needed.
  */
-export function normalizeOpportunities(inputs: OpportunityEvaluationInput[]): NormalizedOpportunity[] {
-  return inputs.map((input) => normalizeOpportunity(input))
+export function normalizeOpportunities(
+  inputs: OpportunityEvaluationInput[],
+  thresholds: Partial<OpportunityValidationThresholds> = {},
+): NormalizedOpportunity[] {
+  return inputs.map((input) => normalizeOpportunity(input, thresholds))
 }
