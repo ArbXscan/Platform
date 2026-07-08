@@ -1,7 +1,10 @@
+import type { KeyboardEvent } from "react"
 import { ChainLogo } from "./ChainLogo"
 import { DexLogo } from "./DexLogo"
 import { TokenLogo } from "./TokenLogo"
+import { WatchlistToggleButton } from "./WatchlistToggleButton"
 import { getChainById } from "../../constants/chains"
+import { useWatchlist } from "../../hooks/useWatchlist"
 import type { TokenSearchResult } from "../../types/token"
 
 function formatUsd(value: number): string {
@@ -20,12 +23,23 @@ interface SearchResultCardProps {
 
 export function SearchResultCard({ result, onSelect }: SearchResultCardProps) {
   const chainName = getChainById(result.chainId)?.name ?? result.chainId
+  const { toggle, isWatched } = useWatchlist()
+  const watched = isWatched(result.address, result.chainId)
+
+  function handleKeyDown(event: KeyboardEvent<HTMLDivElement>) {
+    if (event.key === "Enter" || event.key === " ") {
+      event.preventDefault()
+      onSelect(result)
+    }
+  }
 
   return (
-    <button
-      type="button"
+    <div
+      role="button"
+      tabIndex={0}
       onClick={() => onSelect(result)}
-      className="flex w-full items-center gap-3 rounded-xl border border-white/10 bg-white/[0.03] p-4 text-left transition-colors hover:border-cyan-400/30 hover:bg-white/[0.05] focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400/40"
+      onKeyDown={handleKeyDown}
+      className="flex w-full cursor-pointer items-center gap-3 rounded-xl border border-white/10 bg-white/[0.03] p-4 text-left transition-colors hover:border-cyan-400/30 hover:bg-white/[0.05] focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400/40"
     >
       <TokenLogo logoUrl={result.logoUrl} symbol={result.symbol} size={36} />
 
@@ -56,6 +70,19 @@ export function SearchResultCard({ result, onSelect }: SearchResultCardProps) {
         <div className="text-xs uppercase tracking-wide text-slate-500">Liquidity</div>
         <div className="text-sm font-medium text-white">{formatUsd(result.liquidityUsd)}</div>
       </div>
-    </button>
+
+      <WatchlistToggleButton
+        active={watched}
+        onToggle={() =>
+          toggle({
+            address: result.address,
+            chainId: result.chainId,
+            symbol: result.symbol,
+            name: result.name,
+            logoUrl: result.logoUrl,
+          })
+        }
+      />
+    </div>
   )
 }

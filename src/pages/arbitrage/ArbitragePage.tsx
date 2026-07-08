@@ -1,15 +1,17 @@
 import { useMemo, useState } from "react"
-import { FiZap } from "react-icons/fi"
+import { FiHeart, FiZap } from "react-icons/fi"
 import { ChainLogo } from "../../components/shared/ChainLogo"
 import { DexActionPanel } from "../../components/shared/DexActionPanel"
 import { DexLogo } from "../../components/shared/DexLogo"
 import { EmptyState } from "../../components/shared/EmptyState"
 import { SourceBadge } from "../../components/shared/SourceBadge"
+import { WatchlistToggleButton } from "../../components/shared/WatchlistToggleButton"
 import { Select } from "../../components/ui/Select"
 import { TableRowSkeleton } from "../../components/ui/Skeleton"
 import { Tooltip } from "../../components/ui/Tooltip"
 import { DEFAULT_CHAIN_ID, SUPPORTED_CHAINS, getChainById } from "../../constants/chains"
 import { useArbitrage } from "../../hooks/useArbitrage"
+import { useFavorites } from "../../hooks/useFavorites"
 import { useVerifyOpportunity } from "../../hooks/useVerifyOpportunity"
 import type { ConfidenceLevel } from "../../types/api"
 import type { ArbitrageOpportunity } from "../../types/arbitrage"
@@ -68,6 +70,8 @@ function formatVerifiedAt(iso: string): string {
  */
 function OpportunityRow({ opportunity }: { opportunity: OpportunityRowData }) {
   const { result, status, error, verify } = useVerifyOpportunity()
+  const { toggle, isFavorited } = useFavorites()
+  const favorited = isFavorited(opportunity.id)
 
   return (
     <tr className="transition-colors hover:bg-white/[0.02]">
@@ -111,14 +115,24 @@ function OpportunityRow({ opportunity }: { opportunity: OpportunityRowData }) {
       </td>
       <td className="px-4 py-3">
         <div className="flex flex-col items-start gap-1">
-          <button
-            type="button"
-            onClick={() => verify(opportunity)}
-            disabled={status === "loading"}
-            className="inline-flex items-center gap-1.5 rounded-md border border-white/10 px-3 py-1 text-xs text-slate-300 transition-colors hover:bg-white/[0.05] focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400/40 disabled:cursor-not-allowed disabled:opacity-40"
-          >
-            {status === "loading" ? "Verifying…" : "Verify"}
-          </button>
+          <div className="flex items-center gap-1">
+            <button
+              type="button"
+              onClick={() => verify(opportunity)}
+              disabled={status === "loading"}
+              className="inline-flex items-center gap-1.5 rounded-md border border-white/10 px-3 py-1 text-xs text-slate-300 transition-colors hover:bg-white/[0.05] focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400/40 disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              {status === "loading" ? "Verifying…" : "Verify"}
+            </button>
+            <WatchlistToggleButton
+              active={favorited}
+              onToggle={() => toggle(opportunity)}
+              icon={FiHeart}
+              activeLabel="Remove from favorites"
+              inactiveLabel="Add to favorites"
+              size={16}
+            />
+          </div>
 
           {result && (
             <div className="flex flex-col items-start gap-2">

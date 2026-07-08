@@ -7,10 +7,12 @@ import { EmptyState } from "../../components/shared/EmptyState"
 import { SourceBadge } from "../../components/shared/SourceBadge"
 import { StatCard } from "../../components/shared/StatCard"
 import { TokenLogo } from "../../components/shared/TokenLogo"
+import { WatchlistToggleButton } from "../../components/shared/WatchlistToggleButton"
 import { Skeleton, StatCardSkeleton } from "../../components/ui/Skeleton"
 import { getChainById } from "../../constants/chains"
 import { getExplorer } from "../../constants/explorers"
 import { useToken } from "../../hooks/useToken"
+import { useWatchlist } from "../../hooks/useWatchlist"
 
 function formatUsd(value: number): string {
   return `$${Intl.NumberFormat("en", { notation: "compact", maximumFractionDigits: 2 }).format(value)}`
@@ -29,6 +31,7 @@ export default function TokenDetailPage() {
   const { query } = useParams<{ query: string }>()
   const { token, status, error } = useToken(query)
   const explorer = token ? getExplorer(token.chainId) : undefined
+  const { toggle, isWatched } = useWatchlist()
 
   return (
     <div className="p-6 md:p-10">
@@ -61,8 +64,21 @@ export default function TokenDetailPage() {
             <div className="flex items-center gap-3">
               <TokenLogo logoUrl={token.logoUrl} symbol={token.symbol} size={40} />
               <div>
-                <h1 className="text-2xl font-bold text-white">
+                <h1 className="flex items-center gap-2 text-2xl font-bold text-white">
                   {token.name} <span className="text-slate-400">({token.symbol})</span>
+                  <WatchlistToggleButton
+                    active={isWatched(token.address, token.chainId)}
+                    onToggle={() =>
+                      toggle({
+                        address: token.address,
+                        chainId: token.chainId,
+                        symbol: token.symbol,
+                        name: token.name,
+                        logoUrl: token.logoUrl,
+                      })
+                    }
+                    size={20}
+                  />
                 </h1>
                 <p className="mt-1 flex items-center gap-1.5 text-sm text-slate-400">
                   <ChainLogo chainId={token.chainId} size={16} />

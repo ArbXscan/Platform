@@ -1,6 +1,14 @@
-import { useState, type FormEvent } from "react"
+import { useMemo, useState, type FormEvent } from "react"
 import { useNavigate } from "react-router-dom"
-import { FiActivity, FiGlobe, FiInbox, FiLayers, FiSearch } from "react-icons/fi"
+import { FiActivity, FiGlobe, FiHeart, FiInbox, FiLayers, FiRefreshCw, FiSearch, FiStar, FiZap } from "react-icons/fi"
+import {
+  FavoritesCard,
+  RecentSearchesCard,
+  SearchHistoryCard,
+  TrendingOpportunitiesCard,
+  TrendingTokensCard,
+  WatchlistCard,
+} from "../../components/dashboard"
 import { TrendingVolumeChart } from "../../components/charts/TrendingVolumeChart"
 import { ChainLogo } from "../../components/shared/ChainLogo"
 import { EmptyState } from "../../components/shared/EmptyState"
@@ -8,21 +16,44 @@ import { SourceBadge } from "../../components/shared/SourceBadge"
 import { StatCard } from "../../components/shared/StatCard"
 import { Skeleton, StatCardSkeleton } from "../../components/ui/Skeleton"
 import { SUPPORTED_CHAINS, DEFAULT_CHAIN_ID } from "../../constants/chains"
+import { useArbitrage } from "../../hooks/useArbitrage"
+import { useFavorites } from "../../hooks/useFavorites"
 import { useMarketData } from "../../hooks/useMarketData"
+import { useWatchlist } from "../../hooks/useWatchlist"
 
 function formatUsd(value: number): string {
   return `$${Intl.NumberFormat("en", { notation: "compact", maximumFractionDigits: 2 }).format(value)}`
 }
 
+function formatUpdatedAt(iso: string): string {
+  return new Date(iso).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" })
+}
+
 export default function DashboardPage() {
   const [query, setQuery] = useState("")
   const navigate = useNavigate()
-  const { snapshot, status, error } = useMarketData(DEFAULT_CHAIN_ID)
+  const { snapshot, status, error, refresh: refreshMarket } = useMarketData(DEFAULT_CHAIN_ID)
+  const { opportunities, status: arbitrageStatus, error: arbitrageError, refresh: refreshArbitrage } = useArbitrage()
+  const { watchlist } = useWatchlist()
+  const { favorites } = useFavorites()
   const loadingInitial = status === "loading" && !snapshot
+  const isRefreshing = status === "loading" || arbitrageStatus === "loading"
+  const hasError = Boolean(error) || Boolean(arbitrageError)
+
+  const averageSpreadPercent = useMemo(() => {
+    if (opportunities.length === 0) return undefined
+    const total = opportunities.reduce((sum, o) => sum + o.priceDiffPercent, 0)
+    return total / opportunities.length
+  }, [opportunities])
 
   function handleSearch(e: FormEvent) {
     e.preventDefault()
     if (query.trim()) navigate(`/app/search?q=${encodeURIComponent(query.trim())}`)
+  }
+
+  function handleRefreshAll() {
+    refreshMarket()
+    refreshArbitrage()
   }
 
   return (
@@ -35,33 +66,58 @@ export default function DashboardPage() {
           </p>
         </div>
 
-        <form onSubmit={handleSearch} className="relative w-full md:w-72">
-          <FiSearch className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" aria-hidden="true" />
-          <label htmlFor="dashboard-search" className="sr-only">
-            Search token, symbol, or address
-          </label>
-          <input
-            id="dashboard-search"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search token, symbol, or address"
-            className="w-full rounded-lg border border-white/10 bg-white/[0.03] py-2.5 pl-9 pr-3 text-sm text-white placeholder:text-slate-500 focus:border-cyan-400/50 focus:outline-none"
-          />
-        </form>
+        <div className="flex w-full flex-col items-end gap-1.5 md:w-auto">
+          <div className="flex w-full items-center gap-2 md:w-auto">
+            <form onSubmit={handleSearch} className="relative w-full md:w-72">
+              <FiSearch
+                className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-500"
+                aria-hidden="true"
+              />
+              <label htmlFor="dashboard-search" className="sr-only">
+                Search token, symbol, or address
+              </label>
+              <input
+                id="dashboard-search"
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder="Search token, symbol, or address"
+                className="w-full rounded-lg border border-white/10 bg-white/[0.03] py-2.5 pl-9 pr-3 text-sm text-white placeholder:text-slate-500 focus:border-cyan-400/50 focus:outline-none"
+              />
+            </form>
+
+            <button
+              type="button"
+              onClick={handleRefreshAll}
+              disabled={isRefreshing}
+              aria-label="Refresh all dashboard data"
+              title="Refresh all dashboard data"
+              className="shrink-0 rounded-lg border border-white/10 bg-white/[0.03] p-2.5 text-slate-300 transition-colors hover:border-cyan-400/30 hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400/40 disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              <FiRefreshCw className={isRefreshing ? "animate-spin" : ""} aria-hidden="true" />
+            </button>
+          </div>
+
+          {snapshot && (
+            <p className="text-xs text-slate-600">
+              {isRefreshing ? "Refreshing…" : `Last updated ${formatUpdatedAt(snapshot.source.fetchedAt)}`}
+            </p>
+          )}
+        </div>
       </div>
 
-      {error && (
+      {hasError && (
         <div className="mt-6 rounded-lg border border-red-500/20 bg-red-500/5 p-4 text-sm text-red-300">
-          Couldn't load market data: {error}
+          {error && <p>Couldn't load market data: {error}</p>}
+          {arbitrageError && <p>Couldn't load arbitrage data: {arbitrageError}</p>}
         </div>
       )}
 
-      <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-3">
+      <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7">
         {loadingInitial ? (
           <>
-            <StatCardSkeleton />
-            <StatCardSkeleton />
-            <StatCardSkeleton />
+            {Array.from({ length: 7 }).map((_, i) => (
+              <StatCardSkeleton key={i} />
+            ))}
           </>
         ) : (
           <>
@@ -73,6 +129,19 @@ export default function DashboardPage() {
               hint="Sum across tracked pairs, not the whole market"
             />
             <StatCard icon={FiGlobe} label="Chains Monitored" value={String(SUPPORTED_CHAINS.length)} />
+            <StatCard
+              icon={FiZap}
+              label="Active Opportunities"
+              value={String(opportunities.length)}
+              hint="Cross-DEX spreads currently detected"
+            />
+            <StatCard
+              icon={FiZap}
+              label="Avg. Spread"
+              value={averageSpreadPercent !== undefined ? `${averageSpreadPercent.toFixed(2)}%` : "N/A"}
+            />
+            <StatCard icon={FiStar} label="Watchlisted" value={String(watchlist.length)} />
+            <StatCard icon={FiHeart} label="Favorites" value={String(favorites.length)} />
           </>
         )}
       </div>
@@ -123,6 +192,21 @@ export default function DashboardPage() {
             <EmptyState icon={FiInbox} title="No trending pairs found right now" />
           )}
         </div>
+      </div>
+
+      <div className="mt-8 grid grid-cols-1 gap-4 lg:grid-cols-2">
+        <TrendingOpportunitiesCard />
+        <TrendingTokensCard />
+      </div>
+
+      <div className="mt-8 grid grid-cols-1 gap-4 lg:grid-cols-2">
+        <WatchlistCard />
+        <FavoritesCard />
+      </div>
+
+      <div className="mt-8 grid grid-cols-1 gap-4 lg:grid-cols-2">
+        <RecentSearchesCard />
+        <SearchHistoryCard />
       </div>
 
       <div className="mt-8">
