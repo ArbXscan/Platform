@@ -1,6 +1,9 @@
-import { findRecognizedAsset } from "../../registry/assets"
-import { searchPairs, type DexScreenerPair } from "../../services/providers/dexscreener"
+import { searchPairs } from "../../services/providers/dexscreener"
+import type { DexScreenerPair } from "../../services/providers/dexscreener"
+import { normalizeSearchQuery, rankAssets } from "../search-ranking"
+import type { AssetIdentityReport, RankedAssetResult, SearchQuery } from "../search-ranking"
 import type { TokenSearchResult } from "../../types/token"
+import { toAssetIdentityReport } from "./search-adapter"
 
 const MAX_RESULTS = 20
 
@@ -10,82 +13,41 @@ function toNumber(value: string | number | null | undefined): number {
   return Number.isFinite(n) ? n : 0
 }
 
-/**
- * Relevance tiers, highest first. A pair that matches neither the symbol nor
- * the name of the query (tier 0) is excluded entirely — DexScreener's search
- * already applies some server-side relevance, but nothing here assumes that;
- * every candidate is checked against the query directly.
- *
- * TIER_RECOGNIZED sits above TIER_EXACT_SYMBOL: when a candidate is both an
- * exact/prefix match for the query AND corresponds to a globally important
- * asset in the Official Asset Registry (src/registry/assets), it's boosted
- * above other exact-symbol matches. This is what makes "BTC" surface the
- * canonical Bitcoin-ticker pair ahead of similarly-named wrapped or meme
- * tokens sharing the same ticker string. It does not — and cannot — verify
- * that a given pair is genuinely legitimate; within a tier, liquidity/volume
- * still tie-break, which in practice favors the pair with real backing.
- */
-const TIER_RECOGNIZED = 6
-const TIER_EXACT_SYMBOL = 5
-const TIER_EXACT_NAME = 4
-const TIER_PREFIX = 3
-const TIER_PARTIAL = 2
-const TIER_NONE = 0
-
-function matchTier(query: string, symbol: string, name: string): number {
-  const q = query.trim().toLowerCase()
-  const s = symbol.toLowerCase()
-  const n = name.toLowerCase()
-
-  if (s === q) return TIER_EXACT_SYMBOL
-  if (n === q) return TIER_EXACT_NAME
-  if (s.startsWith(q) || n.startsWith(q)) return TIER_PREFIX
-  if (s.includes(q) || n.includes(q)) return TIER_PARTIAL
-  return TIER_NONE
-}
-
 interface CandidateGroup {
-  tier: number
   liquidityUsd: number
   volume24hUsd: number
   bestPair: DexScreenerPair
-  isRecognized: boolean
+}
+
+function groupKey(chainId: string, address: string): string {
+  return `${chainId.trim().toLowerCase()}:${address.trim().toLowerCase()}`
 }
 
 /**
- * Groups pairs by token identity (chain + contract address) — the same token
- * often trades on multiple pairs/DEXs, and each of those should count as ONE
- * search candidate, not one per pair. Liquidity/volume are summed across the
- * group's pairs; the group's relevance tier is the best tier found among them
- * (symbol/name are constant per token, so in practice all pairs in a group
- * share the same tier).
+ * Groups pairs by token identity (chain + contract address) — the same
+ * token often trades on multiple pairs/DEXs, and each of those should
+ * count as ONE search candidate, not one per pair. Liquidity/volume are
+ * summed across the group's pairs; the group's bestPair is whichever
+ * single pair has the highest liquidity, used for display fields (logo,
+ * price, dexId). This aggregation has no equivalent in the Search Ranking
+ * Engine, so it stays here; relevance filtering and ranking do not — see
+ * searchTokens(), which hands every group to rankAssets() instead of
+ * scoring/sorting candidates itself.
  */
-function groupByToken(query: string, pairs: DexScreenerPair[]): Map<string, CandidateGroup> {
+function groupByToken(pairs: DexScreenerPair[]): Map<string, CandidateGroup> {
   const groups = new Map<string, CandidateGroup>()
 
   for (const pair of pairs) {
-    let tier = matchTier(query, pair.baseToken.symbol, pair.baseToken.name)
-    if (tier === TIER_NONE) continue // irrelevant to the query — never shown, regardless of liquidity
-
-    const isRecognized = Boolean(
-      findRecognizedAsset(pair.baseToken.symbol) ?? findRecognizedAsset(pair.baseToken.name),
-    )
-    if (isRecognized && tier >= TIER_PREFIX) {
-      tier = TIER_RECOGNIZED
-    }
-
-    const key = `${pair.chainId}:${pair.baseToken.address}`
+    const key = groupKey(pair.chainId, pair.baseToken.address)
     const liquidityUsd = pair.liquidity?.usd ?? 0
     const volume24hUsd = pair.volume?.h24 ?? 0
     const existing = groups.get(key)
 
     if (!existing) {
-      groups.set(key, { tier, liquidityUsd, volume24hUsd, bestPair: pair, isRecognized })
+      groups.set(key, { liquidityUsd, volume24hUsd, bestPair: pair })
       continue
     }
 
-    existing.tier = Math.max(existing.tier, tier)
-    existing.isRecognized = existing.isRecognized || isRecognized
     existing.liquidityUsd += liquidityUsd
     existing.volume24hUsd += volume24hUsd
     if (liquidityUsd > (existing.bestPair.liquidity?.usd ?? 0)) {
@@ -96,7 +58,7 @@ function groupByToken(query: string, pairs: DexScreenerPair[]): Map<string, Cand
   return groups
 }
 
-function toSearchResult(group: CandidateGroup): TokenSearchResult {
+function toSearchResult(ranked: RankedAssetResult, group: CandidateGroup): TokenSearchResult {
   const { bestPair } = group
   return {
     address: bestPair.baseToken.address,
@@ -111,22 +73,21 @@ function toSearchResult(group: CandidateGroup): TokenSearchResult {
     liquidityUsd: group.liquidityUsd,
     volume24hUsd: group.volume24hUsd,
     dexId: bestPair.dexId,
-    isRecognized: group.isRecognized,
+    isRecognized: ranked.asset.isVerified === true,
   }
 }
 
 /**
- * Returns ranked, deduplicated search candidates for a query — never a single
- * auto-resolved token. Ranking rule (strict, in this exact order):
- *   1. Exact symbol match
- *   2. Exact name match
- *   3. Prefix match
- *   4. Partial match
- *   5. Liquidity (tie-breaker WITHIN a tier only)
- *   6. 24h volume (secondary tie-breaker)
- * Liquidity/volume never move a candidate into a higher relevance tier — a
- * high-liquidity irrelevant token can never outrank a low-liquidity exact
- * match. This is the fix for the previous liquidity-only selection defect.
+ * Returns ranked, deduplicated search candidates for a query — never a
+ * single auto-resolved token.
+ *
+ * Flow: DexScreenerPair[] → grouped by token identity (liquidity/volume
+ * aggregated) → converted to AssetIdentityReport via the Search Adapter
+ * (search-adapter.ts) → ranked by the Search Ranking Engine
+ * (features/search-ranking), which owns match relevance, canonical/
+ * native/official-wrapped/verified prioritization, duplicate elimination,
+ * and deterministic ordering — none of that logic is duplicated here —
+ * → mapped back into TokenSearchResult.
  */
 export async function searchTokens(query: string): Promise<TokenSearchResult[]> {
   const trimmed = query.trim()
@@ -135,14 +96,23 @@ export async function searchTokens(query: string): Promise<TokenSearchResult[]> 
   const pairs = await searchPairs(trimmed)
   if (pairs.length === 0) return []
 
-  const groups = groupByToken(trimmed, pairs)
+  const groups = groupByToken(pairs)
+  const groupList = Array.from(groups.values())
 
-  return Array.from(groups.values())
-    .sort((a, b) => {
-      if (b.tier !== a.tier) return b.tier - a.tier
-      if (b.liquidityUsd !== a.liquidityUsd) return b.liquidityUsd - a.liquidityUsd
-      return b.volume24hUsd - a.volume24hUsd
-    })
-    .slice(0, MAX_RESULTS)
-    .map(toSearchResult)
+  const assets: AssetIdentityReport[] = groupList.map((group) => toAssetIdentityReport(group.bestPair))
+  const searchQuery: SearchQuery = normalizeSearchQuery({ term: trimmed })
+  const ranked = rankAssets(assets, searchQuery)
+
+  const groupByAssetKey = new Map<string, CandidateGroup>(
+    groupList.map((group) => [groupKey(group.bestPair.chainId, group.bestPair.baseToken.address), group]),
+  )
+
+  const results: TokenSearchResult[] = []
+  for (const rankedResult of ranked.slice(0, MAX_RESULTS)) {
+    const group = groupByAssetKey.get(groupKey(rankedResult.asset.chain, rankedResult.asset.contractAddress))
+    if (!group) continue
+    results.push(toSearchResult(rankedResult, group))
+  }
+
+  return results
 }
