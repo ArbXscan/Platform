@@ -3,6 +3,7 @@ import type { DexScreenerPair } from "../../services/providers/dexscreener"
 import { normalizeSearchQuery, rankAssets } from "../search-ranking"
 import type { AssetIdentityReport, RankedAssetResult, SearchQuery } from "../search-ranking"
 import type { TokenSearchResult } from "../../types/token"
+import { findRecognizedAsset } from "../../registry/assets"
 import { toAssetIdentityReport } from "./search-adapter"
 
 const MAX_RESULTS = 20
@@ -78,6 +79,70 @@ function toSearchResult(ranked: RankedAssetResult, group: CandidateGroup): Token
 }
 
 /**
+ * The Search Adapter (search-adapter.ts) recognizes an asset via
+ * findRecognizedAsset(symbol) ?? findRecognizedAsset(name) — but that
+ * lookup index is keyed by symbol, name, AND alias together (see
+ * registry/assets/index.ts), so a token whose *symbol* happens to collide
+ * with a canonical asset's *name* (e.g. a meme coin trading under the
+ * symbol "BITCOIN") gets incorrectly marked verified/native/wrapped, which
+ * then outranks the real canonical asset. This corrects exactly that case:
+ * an asset only keeps its recognized-derived flags when the recognized
+ * entry's actual symbol or actual name precisely matches this token's own
+ * symbol or name — not merely some other field colliding in the shared
+ * lookup index. Reuses the same findRecognizedAsset() the adapter already
+ * calls; no recognition logic is duplicated, only re-validated.
+ */
+function reconcileCanonicalIdentity(asset: AssetIdentityReport, pair: DexScreenerPair): AssetIdentityReport {
+  const recognized = findRecognizedAsset(pair.baseToken.symbol) ?? findRecognizedAsset(pair.baseToken.name)
+  if (!recognized) return asset
+
+  const symbol = pair.baseToken.symbol.trim().toLowerCase()
+  const name = pair.baseToken.name.trim().toLowerCase()
+  const isPreciseMatch =
+    recognized.symbol.toLowerCase() === symbol ||
+    recognized.name.toLowerCase() === name ||
+    recognized.name.toLowerCase() === symbol ||
+    recognized.symbol.toLowerCase() === name
+
+  if (isPreciseMatch) return asset
+
+  // Recognized only through a coincidental cross-field collision in the shared
+  // lookup index (e.g. this token's symbol matches another asset's name) —
+  // not a genuine identity match. Treat as unrecognized rather than trusting it.
+  return {
+    ...asset,
+    isNativeAsset: false,
+    isWrappedAsset: false,
+    isStablecoin: false,
+    assetCategory: "Unknown",
+    isVerified: undefined,
+    confidence: "unknown",
+  }
+}
+
+/**
+ * Returns the same grouped, adapted candidates searchTokens() ranks
+ * internally, but as raw AssetIdentityReport[] instead of ranked
+ * TokenSearchResult[] — for callers (like Scanner Integration's
+ * availableAssets) that need to do their own matching/ranking via
+ * features/search-ranking themselves. Reuses searchPairs, groupByToken, and
+ * the Search Adapter exactly as searchTokens() does; nothing here is a
+ * second search implementation.
+ */
+export async function searchAssetIdentities(query: string): Promise<AssetIdentityReport[]> {
+  const trimmed = query.trim()
+  if (!trimmed) return []
+
+  const pairs = await searchPairs(trimmed)
+  if (pairs.length === 0) return []
+
+  const groups = groupByToken(pairs)
+  return Array.from(groups.values()).map((group) =>
+    reconcileCanonicalIdentity(toAssetIdentityReport(group.bestPair), group.bestPair),
+  )
+}
+
+/**
  * Returns ranked, deduplicated search candidates for a query — never a
  * single auto-resolved token.
  *
@@ -99,7 +164,9 @@ export async function searchTokens(query: string): Promise<TokenSearchResult[]> 
   const groups = groupByToken(pairs)
   const groupList = Array.from(groups.values())
 
-  const assets: AssetIdentityReport[] = groupList.map((group) => toAssetIdentityReport(group.bestPair))
+  const assets: AssetIdentityReport[] = groupList.map((group) =>
+    reconcileCanonicalIdentity(toAssetIdentityReport(group.bestPair), group.bestPair),
+  )
   const searchQuery: SearchQuery = normalizeSearchQuery({ term: trimmed })
   const ranked = rankAssets(assets, searchQuery)
 

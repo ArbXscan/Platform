@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react"
+import { searchAssetIdentities } from "../../features/search/search.service"
 import { runScannerIntegration } from "../../features/scanner-integration"
 import type {
   AssetIdentityReport,
@@ -15,7 +16,7 @@ import { ScannerResults } from "./ScannerResults"
 import { ScannerSearch } from "./ScannerSearch"
 
 interface ScannerPageProps {
-  /** Candidate assets to search, already identity-resolved — supplied by a future data-source integration (e.g. Asset Registry). Not fetched here. */
+  /** Candidate assets to search, already identity-resolved. Optional — when omitted, resolved via the same Search pipeline the Search page uses (features/search/search.service.ts's searchAssetIdentities, itself built on search-adapter.ts + features/search-ranking). */
   availableAssets?: AssetIdentityReport[]
   /** Every known snapshot of assets across chains, for cross-chain matching — supplied by a future data-source integration. Not fetched here. */
   snapshots?: NormalizedTokenSnapshot[]
@@ -31,9 +32,12 @@ interface ScannerPageProps {
  * existing Scanner Integration flow (features/scanner-integration) for it.
  * No search, ranking, identity, scanning, cross-chain, or recommendation
  * calculation happens here or in any of this page's sub-components — every
- * value rendered comes directly from runScannerIntegration(). Local
- * component state only; no Context, no Redux, no Zustand. Not wired into
- * routing or navigation yet.
+ * value rendered comes directly from runScannerIntegration(). When
+ * `availableAssets` isn't supplied by a caller, it's resolved via the same
+ * Search pipeline the Search page uses (features/search/search.service.ts),
+ * so both pages search the same live candidates — no second search
+ * implementation. Local component state only; no Context, no Redux, no
+ * Zustand.
  */
 export default function ScannerPage({
   availableAssets,
@@ -54,26 +58,31 @@ export default function ScannerPage({
       return
     }
 
+    const searchTerm = term
     let cancelled = false
     setStatus("loading")
     setError(null)
 
-    runScannerIntegration({
-      query: { term },
-      availableAssets: availableAssets ?? [],
-      snapshots: snapshots ?? [],
-      tradeAmountUsd,
-    })
-      .then((result) => {
+    async function run() {
+      try {
+        const resolvedAssets = availableAssets ?? (await searchAssetIdentities(searchTerm))
+        const result = await runScannerIntegration({
+          query: { term: searchTerm },
+          availableAssets: resolvedAssets,
+          snapshots: snapshots ?? [],
+          tradeAmountUsd,
+        })
         if (cancelled) return
         setReport(result)
         setStatus("success")
-      })
-      .catch((err) => {
+      } catch (err) {
         if (cancelled) return
         setError(err instanceof Error ? err.message : "Failed to run the Scanner Integration flow.")
         setStatus("error")
-      })
+      }
+    }
+
+    run()
 
     return () => {
       cancelled = true

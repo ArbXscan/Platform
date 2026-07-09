@@ -32,9 +32,11 @@ export function Navbar() {
     >
       <Container className="flex h-16 items-center justify-between">
         <Link to="/" className="flex items-center gap-2 font-bold text-white">
-          <span className="grid h-8 w-8 place-items-center rounded-lg bg-gradient-to-br from-cyan-400 to-blue-500 text-slate-950">
-            A
-          </span>
+        <img
+  src="/favicon.png"
+  alt="ArbXscan"
+  className="h-8 w-8 rounded-lg"
+/>
           <span className="text-lg tracking-tight">
             ArbX<span className="text-cyan-400">scan</span>
           </span>
