@@ -25,8 +25,12 @@ import type { ScannerIntegrationReport, ScannerIntegrationRequest } from "./type
  * Short-circuit behavior:
  *  - no search result → stop (every later stage reports "skipped")
  *  - invalid token → stop (crossChain/recommendation report "skipped")
- *  - no cross-chain opportunity → stop, but every prior successful stage's
- *    data is still returned (recommendation reports "skipped")
+ *  - no cross-chain pair could be formed at all → stop (crossChain "failed",
+ *    recommendation "skipped")
+ *  - a cross-chain pair was found but isn't a real opportunity → crossChain
+ *    still reports "success" with the full report (opportunityExists: false),
+ *    recommendation reports "skipped" — this is a valid empty result, not a
+ *    failure
  *  - recommendation unavailable → same: prior successful stages are returned
  */
 export async function runScannerIntegration(request: ScannerIntegrationRequest): Promise<ScannerIntegrationReport> {
@@ -102,6 +106,9 @@ export async function runScannerIntegration(request: ScannerIntegrationRequest):
   }
 
   if (recommendation.status !== "success" || !recommendation.data) {
+    const noOpportunityReason =
+      crossChain.data && !crossChain.data.opportunityExists ? crossChain.data.reason : undefined
+
     return {
       searchResult,
       assetIdentity,
@@ -111,7 +118,7 @@ export async function runScannerIntegration(request: ScannerIntegrationRequest):
       assetRegistry,
       backendApi,
       verification: { status: "skipped" },
-      reason: "A cross-chain opportunity was found but a recommendation could not be generated.",
+      reason: noOpportunityReason ?? "A cross-chain opportunity was found but a recommendation could not be generated.",
     }
   }
 

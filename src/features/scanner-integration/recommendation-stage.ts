@@ -37,8 +37,14 @@ export async function runRecommendationStage(
   }
 
   if (result.stage === "no-cross-chain-opportunity") {
+    // A defined report means the Cross-Chain Engine ran successfully and found
+    // this asset on 2+ chains — it just determined the spread doesn't clear
+    // the opportunity bar (opportunityExists: false). That's a valid, complete
+    // result (source/destination chain, buy/sell DEX, spread, reason are all
+    // present), not a failure. Only the absence of any report at all (the
+    // asset wasn't matchable across 2+ of the supplied snapshots) is "failed".
     return {
-      crossChain: result.crossChain ? { status: "failed", data: result.crossChain } : { status: "failed" },
+      crossChain: result.crossChain ? { status: "success", data: result.crossChain } : { status: "failed" },
       recommendation: { status: "skipped" },
     }
   }
