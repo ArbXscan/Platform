@@ -1,6 +1,6 @@
 import { useState } from "react"
 import { Link, useLocation } from "react-router-dom"
-import { FiGrid, FiZap, FiBarChart2, FiSearch, FiArrowLeft, FiMenu, FiX } from "react-icons/fi"
+import { FiGrid, FiZap, FiBarChart2, FiSearch, FiRepeat, FiArrowLeft, FiMenu, FiX } from "react-icons/fi"
 
 interface NavItem {
   label: string
@@ -12,6 +12,7 @@ const NAV_ITEMS: NavItem[] = [
   { label: "Dashboard", to: "/app", icon: FiGrid },
   { label: "Scanner", to: "/app/scanner", icon: FiSearch },
   { label: "Arbitrage Scanner", to: "/app/arbitrage", icon: FiZap },
+  { label: "Cross-Chain Arbitrage", to: "/app/cross-chain", icon: FiRepeat },
   { label: "Market", to: "/app/market", icon: FiBarChart2 },
 ]
 
@@ -29,11 +30,9 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
         to="/"
         className="flex h-16 items-center gap-2 border-b border-white/10 px-5 font-bold text-white"
       >
-        <img
-  src="/favicon.png"
-  alt="ArbXscan"
-  className="h-8 w-8 rounded-lg"
-/>
+        <span className="grid h-8 w-8 place-items-center rounded-lg bg-gradient-to-br from-cyan-400 to-blue-500 text-slate-950">
+          A
+        </span>
         <span className="text-lg tracking-tight">
           ArbX<span className="text-cyan-400">scan</span>
         </span>
@@ -84,11 +83,9 @@ export function Sidebar() {
       {/* mobile top bar + drawer */}
       <div className="sticky top-0 z-40 flex h-14 items-center justify-between border-b border-white/10 bg-slate-950/95 px-4 backdrop-blur-xl md:hidden">
         <Link to="/" className="flex items-center gap-2 font-bold text-white">
-          <img
-  src="/favicon.png"
-  alt="ArbXscan"
-  className="h-7 w-7 rounded-lg"
-/>
+          <span className="grid h-7 w-7 place-items-center rounded-lg bg-gradient-to-br from-cyan-400 to-blue-500 text-slate-950 text-sm">
+            A
+          </span>
           <span className="text-base tracking-tight">
             ArbX<span className="text-cyan-400">scan</span>
           </span>
