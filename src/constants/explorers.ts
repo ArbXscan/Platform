@@ -18,6 +18,11 @@ const EXPLORERS: Record<string, ExplorerInfo> = {
   polygon: { name: "PolygonScan", addressUrl: (a) => `https://polygonscan.com/address/${a}` },
   optimism: { name: "Optimistic Etherscan", addressUrl: (a) => `https://optimistic.etherscan.io/address/${a}` },
   avalanche: { name: "SnowTrace", addressUrl: (a) => `https://snowtrace.io/address/${a}` },
+  // Domain verified via robinhood.com/us/en/support/articles/robinhood-chain-mainnet
+  // and docs.robinhood.com/chain; /address/ path follows Blockscout's standard
+  // route convention (the same explorer software family, same route shape as
+  // any other Blockscout deployment).
+  robinhood: { name: "Robinhood Chain Explorer", addressUrl: (a) => `https://robinhoodchain.blockscout.com/address/${a}` },
 }
 
 export function getExplorer(chainId: string): ExplorerInfo | undefined {

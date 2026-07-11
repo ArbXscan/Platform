@@ -25,7 +25,17 @@ interface ChainStyle {
   className: string
 }
 
-/** Official brand colors per chain — used only for the monogram fallback tier. */
+/**
+ * Official brand colors per chain — used only for the monogram fallback tier.
+ *
+ * TODO(robinhood): Robinhood Chain has no verified official hex color here
+ * yet — Robinhood's own newsroom post (robinhood.com/us/en/newsroom/a-new-visual-identity)
+ * only names an unspecified "Robin Neon" green, and third-party color sites
+ * disagree with each other, so nothing is asserted as "official" until a
+ * real value is sourced from Robinhood's press kit. Until then it's left out
+ * of this map entirely and falls through to FALLBACK_STYLE below, same as
+ * any other unmapped chain — never a guessed color.
+ */
 const CHAIN_STYLES: Record<string, ChainStyle> = {
   ethereum: { label: "E", className: "bg-[#627EEA] text-white" },
   solana: { label: "S", className: "bg-gradient-to-br from-[#9945FF] to-[#14F195] text-white" },

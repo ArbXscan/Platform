@@ -14,6 +14,9 @@ export const SUPPORTED_CHAINS: ChainRef[] = [
   { id: "polygon", name: "Polygon" },
   { id: "optimism", name: "Optimism" },
   { id: "avalanche", name: "Avalanche" },
+  // Chain ID 4663, ETH gas token, EVM-compatible Arbitrum Orbit L2 — verified
+  // via docs.robinhood.com/chain and robinhood.com/us/en/support/articles/robinhood-chain-mainnet.
+  { id: "robinhood", name: "Robinhood Chain" },
 ]
 
 export const DEFAULT_CHAIN_ID = "ethereum"

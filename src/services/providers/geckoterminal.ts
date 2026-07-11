@@ -26,6 +26,9 @@ export const GECKOTERMINAL_NETWORK_MAP: Record<string, string> = {
   polygon: "polygon_pos",
   optimism: "optimism",
   avalanche: "avax",
+  // Verified via geckoterminal.com/robinhood/pools — GeckoTerminal's web slug
+  // matches its API network id for this chain, same as base/solana/optimism above.
+  robinhood: "robinhood",
 }
 
 interface GeckoTerminalPoolAttributes {
