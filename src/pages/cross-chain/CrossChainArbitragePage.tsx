@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { FiRefreshCw, FiX, FiZap } from "react-icons/fi"
 import { ChainLogo } from "../../components/shared/ChainLogo"
 import { DexLogo } from "../../components/shared/DexLogo"
@@ -9,6 +9,8 @@ import { getChainById, SUPPORTED_CHAINS } from "../../constants/chains"
 import type { CrossChainRecommendationAction, CrossChainRiskLevel } from "../../features/cross-chain"
 import type { CrossChainArbitrageRow } from "../../hooks/useCrossChainArbitrage"
 import { useCrossChainArbitrage } from "../../hooks/useCrossChainArbitrage"
+import { useLiveMarketFeed } from "../../hooks/useLiveMarketFeed"
+import { useNotificationEngine } from "../../hooks/useNotificationEngine"
 
 type SortKey = "profit" | "roi" | "spread" | "confidence"
 
@@ -66,7 +68,10 @@ function rowKey(row: CrossChainArbitrageRow): string {
 }
 
 export default function CrossChainArbitragePage() {
-  const { rows, status, error, refresh } = useCrossChainArbitrage()
+  const { rows, status, error, refresh } = useCrossChainArbitrage({ autoRefreshOnMount: false })
+  const liveFeed = useLiveMarketFeed(refresh)
+  useNotificationEngine(rows)
+  const [nowMs, setNowMs] = useState(() => Date.now())
   const [chainFilter, setChainFilter] = useState(ALL_CHAINS)
   const [dexFilter, setDexFilter] = useState(ALL_DEXES)
   const [minSpread, setMinSpread] = useState("")
@@ -76,6 +81,18 @@ export default function CrossChainArbitragePage() {
 
   const isInitialLoad = status === "loading" && rows.length === 0
   const isRefreshing = status === "loading"
+  const isLive = liveFeed.status !== "offline" && liveFeed.status !== "error"
+
+  useEffect(() => {
+    const interval = setInterval(() => setNowMs(Date.now()), 1_000)
+    return () => clearInterval(interval)
+  }, [])
+
+  const lastUpdatedLabel = useMemo(() => {
+    if (!liveFeed.lastUpdatedAt) return null
+    const seconds = Math.max(0, Math.round((nowMs - new Date(liveFeed.lastUpdatedAt).getTime()) / 1000))
+    return seconds < 1 ? "just now" : `${seconds}s ago`
+  }, [liveFeed.lastUpdatedAt, nowMs])
 
   const dexOptions = useMemo(() => {
     const dexes = new Set<string>()
@@ -119,15 +136,26 @@ export default function CrossChainArbitragePage() {
     <div className="p-6 md:p-10">
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-white">Cross-Chain Arbitrage</h1>
+          <h1 className="flex items-center gap-2.5 text-2xl font-bold text-white">
+            Cross-Chain Arbitrage
+            <span
+              className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium ${
+                isLive ? "bg-emerald-400/10 text-emerald-300" : "bg-red-400/10 text-red-300"
+              }`}
+            >
+              <span aria-hidden="true">{isLive ? "🟢" : "🔴"}</span>
+              {isLive ? "LIVE" : "OFFLINE"}
+            </span>
+          </h1>
           <p className="mt-1 text-sm text-slate-400">
             Same-asset price spreads detected across every supported chain.
+            {lastUpdatedLabel && <span className="text-slate-500"> · Last updated: {lastUpdatedLabel}</span>}
           </p>
         </div>
 
         <button
           type="button"
-          onClick={refresh}
+          onClick={liveFeed.refreshNow}
           disabled={isRefreshing}
           aria-label="Refresh cross-chain opportunities"
           title="Refresh cross-chain opportunities"

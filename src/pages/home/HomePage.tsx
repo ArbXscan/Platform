@@ -15,7 +15,7 @@ import { CommunitySection } from "./sections/CommunitySection"
  */
 export default function HomePage() {
   return (
-    <div className="min-h-screen bg-slate-950 text-white antialiased selection:bg-cyan-400/30">
+    <div className="min-h-screen text-white antialiased selection:bg-cyan-400/30">
       <Navbar />
       <main>
         <HeroSection />

@@ -35,7 +35,7 @@ export function TrendingVolumeChart({ data }: TrendingVolumeChartProps) {
           labelStyle={{ color: "#e2e8f0" }}
           formatter={(value) => [`$${Number(value).toLocaleString()}`, "24h Volume"]}
         />
-        <Bar dataKey="volume" fill="#22d3ee" radius={[4, 4, 0, 0]} />
+        <Bar dataKey="volume" fill="#D4FF00" radius={[4, 4, 0, 0]} />
       </BarChart>
     </ResponsiveContainer>
   )

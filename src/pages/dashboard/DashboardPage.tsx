@@ -57,7 +57,7 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="p-6 md:p-10">
+    <div className="p-5 md:p-8">
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div>
           <h1 className="text-2xl font-bold text-white">Dashboard</h1>
@@ -112,7 +112,7 @@ export default function DashboardPage() {
         </div>
       )}
 
-      <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7">
+      <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
         {loadingInitial ? (
           <>
             {Array.from({ length: 7 }).map((_, i) => (

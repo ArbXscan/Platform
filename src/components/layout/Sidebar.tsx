@@ -76,12 +76,12 @@ export function Sidebar() {
   return (
     <>
       {/* desktop */}
-      <aside className="sticky top-0 hidden h-screen w-64 shrink-0 border-r border-white/10 bg-slate-950 md:block">
+      <aside className="sticky top-0 hidden h-screen w-64 shrink-0 border-r border-white/10 bg-white/[0.02] backdrop-blur-xl md:block">
         <SidebarContent />
       </aside>
 
       {/* mobile top bar + drawer */}
-      <div className="sticky top-0 z-40 flex h-14 items-center justify-between border-b border-white/10 bg-slate-950/95 px-4 backdrop-blur-xl md:hidden">
+      <div className="sticky top-0 z-40 flex h-14 items-center justify-between border-b border-white/10 bg-white/[0.02] px-4 backdrop-blur-xl md:hidden">
         <Link to="/" className="flex items-center gap-2 font-bold text-white">
           <span className="grid h-7 w-7 place-items-center rounded-lg bg-gradient-to-br from-cyan-400 to-blue-500 text-slate-950 text-sm">
             A
@@ -100,7 +100,7 @@ export function Sidebar() {
       </div>
 
       {mobileOpen && (
-        <div className="fixed inset-0 top-14 z-30 bg-slate-950 md:hidden">
+        <div className="fixed inset-0 top-14 z-30 bg-white/[0.02] backdrop-blur-xl md:hidden">
           <SidebarContent onNavigate={() => setMobileOpen(false)} />
         </div>
       )}

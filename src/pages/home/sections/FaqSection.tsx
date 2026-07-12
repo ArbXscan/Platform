@@ -10,7 +10,7 @@ export function FaqSection() {
 
   return (
     <section id="faq" className="py-20">
-      <Container className="max-w-3xl">
+      <Container className="max-w-5xl">
         <AnimatedSection className="text-center">
           <h2 className="text-3xl font-bold text-white sm:text-4xl">
             Frequently asked questions

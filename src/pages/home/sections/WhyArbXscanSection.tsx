@@ -6,7 +6,7 @@ export function WhyArbXscanSection() {
   return (
     <section id="why" className="py-20">
       <Container>
-        <AnimatedSection className="mx-auto max-w-2xl text-center">
+        <AnimatedSection className="mx-auto max-w-4xl text-center">
           <h2 className="text-3xl font-bold text-white sm:text-4xl">
             Why ArbXscan
           </h2>
@@ -15,7 +15,7 @@ export function WhyArbXscanSection() {
           </p>
         </AnimatedSection>
 
-        <div className="mt-14 grid gap-6 sm:grid-cols-2">
+        <div className="mt-14 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
           {WHY_REASONS.map((reason, i) => (
             <AnimatedSection
               key={reason.id}

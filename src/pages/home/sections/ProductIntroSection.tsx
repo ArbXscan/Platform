@@ -5,7 +5,7 @@ export function ProductIntroSection() {
   return (
     <section id="intro" className="py-20">
       <Container>
-        <AnimatedSection className="mx-auto max-w-3xl text-center">
+        <AnimatedSection className="mx-auto max-w-5xl text-center">
           <p className="text-sm font-semibold uppercase tracking-widest text-cyan-400">
             The Platform
           </p>

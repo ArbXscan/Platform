@@ -7,7 +7,7 @@ export function SupportedChainsSection() {
   return (
     <section id="chains" className="py-20">
       <Container>
-        <AnimatedSection className="mx-auto max-w-2xl text-center">
+        <AnimatedSection className="mx-auto max-w-4xl text-center">
           <h2 className="text-3xl font-bold text-white sm:text-4xl">
             Supported chains
           </h2>
